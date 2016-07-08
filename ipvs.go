@@ -309,6 +309,7 @@ type Dest struct {
 	Weight int32
 	Port   uint16
 	AF     uint16
+	Stat   StatsIntf
 }
 
 func (d *Dest) IsEqual(od *Dest) bool {
@@ -354,6 +355,7 @@ type Service struct {
 	Sched  string
 	FWMark uint32
 	AF     uint16
+	Stat   StatsIntf
 }
 
 func (s *Service) IsEqual(os Service) bool {
@@ -631,6 +633,37 @@ func (ipvs *IpvsClient) getPoolForAttrList(
 	return pool, nil
 }
 
+func (ipvs *IpvsClient) getPoolForAttrListWithStat(
+	svcAttrList SerDes) (Pool, error) {
+	list := svcAttrList.(*AttrListType).Amap
+	var pool Pool
+	pool.Service.InitFromAttrList(list)
+	pool.Service.Stat = GetStatsFromAttrList(svcAttrList.(*AttrListType))
+	destReq, err := ipvs.mt.InitGNLMessageStr("GET_DEST", MATCH_ROOT_REQUEST)
+	if err != nil {
+		return pool, err
+	}
+	svcAttrListDef, _ := ATLName2ATL["IpvsServiceAttrList"]
+	svcAttrListType := CreateAttrListType(svcAttrListDef)
+	svcAttrListType.Set(list)
+	destReq.AttrMap["SERVICE"] = &svcAttrListType
+	destResps, err := ipvs.Sock.Query(destReq)
+	if err != nil {
+		return pool, err
+	}
+	for _, destResp := range destResps {
+		var d Dest
+		dstAttrList := destResp.GetAttrList("DEST")
+		d.AF = pool.Service.AF
+		d.Stat = GetStatsFromAttrList(dstAttrList.(*AttrListType))
+		if dstAttrList != nil {
+			d.InitFromAttrList(dstAttrList.(*AttrListType).Amap)
+			pool.Dests = append(pool.Dests, d)
+		}
+	}
+	return pool, nil
+}
+
 func (ipvs *IpvsClient) GetPools() ([]Pool, error) {
 	var pools []Pool
 	msg, err := ipvs.mt.InitGNLMessageStr("GET_SERVICE", MATCH_ROOT_REQUEST)
@@ -643,7 +676,7 @@ func (ipvs *IpvsClient) GetPools() ([]Pool, error) {
 	}
 	for _, resp := range resps {
 		svcAttrList := resp.GetAttrList("SERVICE")
-		pool, err := ipvs.getPoolForAttrList(svcAttrList.(*AttrListType).Amap)
+		pool, err := ipvs.getPoolForAttrListWithStat(svcAttrList)
 		if err != nil {
 			return nil, err
 		}
