@@ -5,12 +5,12 @@ import (
 	"github.com/tedcy/gnl2go"
 	"net/http"
     "os"                                                                        
-	"io"
 	"fmt"
 	"encoding/json"
     "os/signal"                                                                 
     "runtime"                                                                   
     "syscall"                                                                   
+	"time"
 )
 
 type Server struct {
@@ -28,18 +28,11 @@ func (this *Server) httpDo(wr http.ResponseWriter, r *http.Request) {
 		log.Infof("json marshal %#v\n", err)               
 		return                                                                     
     }
-	n,err := wr.Write(b[:])
+	_,err = wr.Write(b[:])
 	if err != nil {
 		log.Infof("write %#v\n", err)               
 		return
     }
-	log.Infof("%d %d",n,len(b))
-	return
-}
-
-func (this *Server) httpDo1(wr http.ResponseWriter, r *http.Request) {
-	//this.ipvs.GetPools()                                                      
-	io.WriteString(wr,"123")
 	return
 }
 
@@ -60,12 +53,11 @@ func main() {
 		}                                                                              
 		mux := http.NewServeMux()                                                
         mux.HandleFunc("/service", s.httpDo)                                           
-        mux.HandleFunc("/service1", s.httpDo1)                                           
         server := &http.Server {                                                
             Addr:               "127.0.0.1:8088",                                        
             Handler:            mux,                                            
-            ReadTimeout:        500000,                         
-            WriteTimeout:       500000,                        
+            ReadTimeout:        500000 * time.Second,                         
+            WriteTimeout:       500000 * time.Second,                        
         }                                                                       
         if err = server.ListenAndServe();err != nil {                           
             log.Infof("server port serve failed: %s",err)                       
