@@ -349,13 +349,14 @@ func (d *Dest) InitFromAttrList(list map[string]SerDes) error {
 }
 
 type Service struct {
-	Proto  uint16
-	VIP    string
-	Port   uint16
-	Sched  string
-	FWMark uint32
-	AF     uint16
-	Stat   StatsIntf
+	Proto      uint16
+	VIP        string
+	Port       uint16
+	Sched      string
+	FWMark     uint32
+	AF         uint16
+	Persistent uint32
+	Stat       StatsIntf
 }
 
 func (s *Service) IsEqual(os Service) bool {
@@ -377,6 +378,8 @@ func (s *Service) InitFromAttrList(list map[string]SerDes) error {
 		s.Proto = uint16(*proto)
 		p := list["PORT"].(*Net16Type)
 		s.Port = uint16(*p)
+		persistent := list["TIMEOUT"].(*U32Type)
+		s.Persistent = uint32(*persistent)
 	} else {
 		fw := list["FWMARK"].(*U32Type)
 		s.FWMark = uint32(*fw)
