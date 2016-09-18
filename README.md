@@ -46,3 +46,57 @@ FWM  1 IPv6 wrr
   -> [fc00:1::12]:0               Tunnel  10     0          0         
   -> [fc00:2:3::12]:0             Tunnel  33     0          0         
 ```
+
+####Output from example in cmd/
+
+```
+sudo ./main
+
+curl http://ip:port/service|jq . or curl http://ip:port/service/192.168.0.100|jq .
+[
+  {
+    "Service": {
+      "Proto": 6,
+      "VIP": "192.168.0.100",
+      "Port": 80,
+      "Sched": "wlc",
+      "FWMark": 0,
+      "AF": 2,
+      "Persistent": 1800,
+      "Stat": {
+        "Conns": 0,
+        "Inpkts": 0,
+        "Outpkts": 0,
+        "Inbytes": 0,
+        "Outbytes": 0,
+        "Cps": 0,
+        "Inpps": 0,
+        "Outpps": 0,
+        "Inbps": 0,
+        "Outbps": 0
+      }
+    },
+    "Dests": [
+      {
+        "IP": "192.168.197.150",
+        "Weight": 1,
+        "Port": 80,
+        "AF": 2,
+        "Stat": {
+          "Conns": 0,
+          "Inpkts": 0,
+          "Outpkts": 0,
+          "Inbytes": 0,
+          "Outbytes": 0,
+          "Cps": 0,
+          "Inpps": 0,
+          "Outpps": 0,
+          "Inbps": 0,
+          "Outbps": 0
+        }
+      }
+    ]
+  }
+]
+```
+if address is specified, then return the items whose VIP is equal to the address
